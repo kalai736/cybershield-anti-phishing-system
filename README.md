@@ -1,5 +1,8 @@
-CyberShield: AI-Powered Anti-Phishing Detection System
-------
+project title 
+
+CyberShield Anti-Phishing Detection System
+
+____
 
 Abstract
 
@@ -28,36 +31,52 @@ System Modules
 
 1. Website Analysis Module
 
-Examines website URLs and web content to identify phishing indicators such as suspicious domains and misleading website structures.
+Analyzes website URLs and identifies phishing indicators.
 
 2. Email Analysis Module
 
-Analyzes email content, sender information, and suspicious keywords to detect phishing attempts.
+Scans email content and sender information for suspicious activity.
 
 3. URL Verification Module
 
-Validates URLs and determines whether a link is safe or potentially malicious.
+Validates URLs and determines whether links are safe or malicious.
 
 4. Threat Detection Module
 
-Processes collected information and classifies threats using predefined security rules and intelligent detection techniques.
+Classifies threats using predefined security rules and intelligent detection methods.
 
 5. Alert & Notification Module
 
-Provides instant alerts and security recommendations when a phishing threat is detected.
+Provides real-time alerts and security recommendations.
 
 6. Reporting Module
 
-Maintains logs and generates reports for monitoring detected phishing activities.
+Generates reports and maintains threat logs.
 
 ---
 
-Technologies Used
+Technology Stack
 
-- Python
-- Machine Learning
-- Cybersecurity Techniques
+Front End
+
+- HTML
+- CSS
+- Bootstrap
+
+Back End
+
+- Python Flask
+
+Database
+
+- MySQL
+
+Additional Technology
+
+- Rule-Based Detection
+- Basic Machine Learning (NLP)
 - URL Analysis
+- Cybersecurity Techniques
 - Git & GitHub
 
 ---
@@ -80,7 +99,7 @@ Expected Outcome
 - Real-time identification of cyber threats.
 - Improved user awareness regarding phishing attacks.
 - Enhanced protection against online fraud and identity theft.
-- A reliable, scalable, and user-friendly anti-phishing security solution.
+- A reliable and user-friendly anti-phishing security solution.
 
 ---
 
@@ -88,6 +107,10 @@ Conclusion
 
 CyberShield aims to strengthen cybersecurity by providing an effective anti-phishing detection mechanism. The system helps users identify cyber threats, avoid fraudulent activities, and ensure safer online interactions through intelligent monitoring and real-time alerts.
 
+---
+
 Author
 
 Kalaiselvi M
+B.Tech Artificial intelligence and data science 
+VSB Engineering College,karur

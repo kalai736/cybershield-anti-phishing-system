@@ -1,6 +1,6 @@
 project title 
 
-CyberShield Anti-Phishing Detection System
+CyberShield Anti-Phishing System
 
 ____
 

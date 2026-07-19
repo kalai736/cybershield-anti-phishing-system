@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CyberShield — Phishing Defense Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #080b12;
+    --bg-panel: #0e131d;
+    --bg-panel-raised: #131a26;
+    --border: rgba(150,175,220,0.12);
+    --border-strong: rgba(150,175,220,0.22);
+    --text: #e7ecf5;
+    --text-dim: #8994a8;
+    --text-faint: #5b6478;
+    --shield: #3e8ede;
+    --shield-glow: #5aa8ff;
+    --cyan: #45d9c8;
+    --warn: #ffb020;
+    --danger: #ff5470;
+    --safe: #33cc82;
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+    --font-body: 'Inter', sans-serif;
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html{ scroll-behavior:smooth; }
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--font-body);
+    line-height:1.6;
+    overflow-x:hidden;
+  }
+  body::before{
+    content:'';
+    position:fixed; inset:0;
+    background-image:
+      linear-gradient(rgba(62,142,222,0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(62,142,222,0.035) 1px, transparent 1px);
+    background-size:42px 42px;
+    pointer-events:none;
+    z-index:0;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%);
+  }
+  a{ color:inherit; text-decoration:none; }
+  .wrap{ max-width:1180px; margin:0 auto; padding:0 28px; position:relative; z-index:1; }
+  ::selection{ background:var(--shield); color:#fff; }
+  :focus-visible{ outline:2px solid var(--cyan); outline-offset:3px; }
+
+  /* ---------- NAV ---------- */
+  header{
+    position:sticky; top:0; z-index:50;
+    backdrop-filter:blur(14px);
+    background:rgba(8,11,18,0.75);
+    border-bottom:1px solid var(--border);
+  }
+  nav{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 28px; max-width:1180px; margin:0 auto;
+  }
+  .logo{
+    display:flex; align-items:center; gap:10px;
+    font-family:var(--font-display); font-weight:700; font-size:19px; letter-spacing:0.3px;
+  }
+  .logo svg{ width:26px; height:26px; }
+  .nav-links{ display:flex; gap:32px; font-family:var(--font-mono); font-size:13px; color:var(--text-dim); }
+  .nav-links a{ transition:color .2s; position:relative; }
+  .nav-links a:hover{ color:var(--cyan); }
+  .status-pill{
+    display:flex; align-items:center; gap:7px;
+    font-family:var(--font-mono); font-size:11.5px; color:var(--safe);
+    border:1px solid rgba(51,204,130,0.35); background:rgba(51,204,130,0.08);
+    padding:6px 12px; border-radius:20px;
+  }
+  .status-dot{ width:6px; height:6px; border-radius:50%; background:var(--safe); box-shadow:0 0 8px var(--safe); animation:pulse-dot 2s infinite; }
+  @keyframes pulse-dot{ 0%,100%{opacity:1;} 50%{opacity:0.35;} }
+  @media (max-width:820px){ .nav-links{ display:none; } }
+
+  /* ---------- HERO ---------- */
+  .hero{
+    padding:88px 0 70px;
+    display:grid; grid-template-columns:1.05fr 0.95fr; gap:40px; align-items:center;
+  }
+  .eyebrow{
+    font-family:var(--font-mono); font-size:12.5px; letter-spacing:2px; text-transform:uppercase;
+    color:var(--cyan); display:flex; align-items:center; gap:10px; margin-bottom:22px;
+  }
+  .eyebrow::before{ content:''; width:22px; height:1px; background:var(--cyan); }
+  h1{
+    font-family:var(--font-display); font-weight:700;
+    font-size:clamp(36px, 5vw, 58px); line-height:1.05; letter-spacing:-0.5px;
+    margin-bottom:22px;
+  }
+  h1 .hl{ color:var(--shield-glow); }
+  .hero p.sub{ font-size:17px; color:var(--text-dim); max-width:460px; margin-bottom:32px; }
+  .cta-row{ display:flex; gap:14px; flex-wrap:wrap; }
+  .btn{
+    font-family:var(--font-mono); font-size:13.5px; font-weight:500;
+    padding:14px 24px; border-radius:8px; border:1px solid transparent;
+    cursor:pointer; transition:transform .15s, box-shadow .2s, background .2s; display:inline-flex; align-items:center; gap:8px;
+  }
+  .btn-primary{ background:var(--shield); color:#04101f; box-shadow:0 0 0 0 rgba(62,142,222,0.5); }
+  .btn-primary:hover{ transform:translateY(-2px); box-shadow:0 8px 24px rgba(62,142,222,0.35); }
+  .btn-ghost{ border-color:var(--border-strong); color:var(--text); }
+  .btn-ghost:hover{ border-color:var(--cyan); color:var(--cyan); }
+
+  .hero-visual{ position:relative; display:flex; align-items:center; justify-content:center; height:420px; }
+  .shield-orbit{ position:relative; width:320px; height:320px; }
+  .radar-ring{
+    position:absolute; inset:0; border-radius:50%; border:1px solid rgba(69,217,200,0.18);
+  }
+  .radar-ring:nth-child(2){ inset:36px; border-color:rgba(69,217,200,0.14); }
+  .radar-ring:nth-child(3){ inset:72px; border-color:rgba(69,217,200,0.10); }
+  .radar-sweep{
+    position:absolute; inset:0; border-radius:50%; overflow:hidden;
+    animation:spin 5s linear infinite;
+  }
+  .radar-sweep::before{
+    content:''; position:absolute; top:50%; left:50%; width:50%; height:2px;
+    background:linear-gradient(90deg, rgba(69,217,200,0.9), transparent);
+    transform-origin:left center;
+  }
+  .radar-sweep::after{
+    content:''; position:absolute; inset:0; border-radius:50%;
+    background:conic-gradient(from 0deg, rgba(69,217,200,0.28), transparent 26%);
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .shield-core{
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    width:150px; height:150px; display:flex; align-items:center; justify-content:center;
+  }
+  .shield-core svg{ width:100%; height:100%; filter:drop-shadow(0 0 22px rgba(62,142,222,0.55)); }
+  .blip{
+    position:absolute; width:7px; height:7px; border-radius:50%; background:var(--danger);
+    box-shadow:0 0 10px var(--danger); animation:blip-fade 3.2s ease-in-out infinite;
+  }
+  @keyframes blip-fade{ 0%,100%{opacity:0;} 10%,40%{opacity:1;} 55%{opacity:0;} }
+
+  /* ---------- SECTION HEADS ---------- */
+  section{ padding:78px 0; position:relative; z-index:1; }
+  .section-head{ max-width:600px; margin-bottom:48px; }
+  .section-tag{ font-family:var(--font-mono); font-size:12px; letter-spacing:2px; text-transform:uppercase; color:var(--text-faint); margin-bottom:12px; }
+  .section-head h2{ font-family:var(--font-display); font-size:clamp(26px,3.4vw,36px); font-weight:600; letter-spacing:-0.3px; margin-bottom:12px; }
+  .section-head p{ color:var(--text-dim); font-size:15.5px; }
+
+  /* ---------- SCANNER ---------- */
+  .scanner-panel{
+    background:var(--bg-panel);
+    border:1px solid var(--border);
+    border-radius:14px;
+    overflow:hidden;
+  }
+  .terminal-bar{
+    display:flex; align-items:center; gap:8px;
+    padding:12px 16px; border-bottom:1px solid var(--border); background:var(--bg-panel-raised);
+  }
+  .tdot{ width:10px; height:10px; border-radius:50%; }
+  .tdot.r{ background:#ff5f56; } .tdot.y{ background:#ffbd2e; } .tdot.g{ background:#27c93f; }
+  .terminal-label{ font-family:var(--font-mono); font-size:12px; color:var(--text-faint); margin-left:8px; }
+  .scanner-body{ padding:28px; }
+  .scan-input-row{ display:flex; gap:12px; flex-wrap:wrap; }
+  .scan-input-row input{
+    flex:1; min-width:220px;
+    background:#060a10; border:1px solid var(--border-strong); border-radius:8px;
+    padding:14px 16px; color:var(--text); font-family:var(--font-mono); font-size:14px;
+  }
+  .scan-input-row input::placeholder{ color:var(--text-faint); }
+  .scan-input-row input:focus{ border-color:var(--cyan); }
+  #scanBtn{ background:var(--cyan); color:#04141c; border:none; }
+  #scanBtn:hover{ box-shadow:0 8px 24px rgba(69,217,200,0.3); transform:translateY(-2px); }
+  #scanBtn:disabled{ opacity:0.6; cursor:progress; transform:none; box-shadow:none; }
+
+  .scan-hint{ font-family:var(--font-mono); font-size:11.5px; color:var(--text-faint); margin-top:10px; }
+
+  .scan-log{
+    margin-top:22px; background:#05080d; border:1px solid var(--border); border-radius:10px;
+    padding:16px 18px; font-family:var(--font-mono); font-size:12.5px; color:var(--text-dim);
+    min-height:52px; display:none;
+  }
+  .scan-log.active{ display:block; }
+  .scan-log .line{ margin-bottom:5px; opacity:0; animation:line-in .35s forwards; }
+  @keyframes line-in{ to{ opacity:1; } }
+  .scan-log .line .tag-ok{ color:var(--safe); } .scan-log .line .tag-warn{ color:var(--warn); } .scan-log .line .tag-bad{ color:var(--danger); }
+
+  .verdict{ margin-top:24px; display:none; grid-template-columns:auto 1fr; gap:24px; align-items:center; }
+  .verdict.active{ display:grid; }
+  .risk-dial{ position:relative; width:112px; height:112px; flex-shrink:0; }
+  .risk-dial svg{ width:100%; height:100%; transform:rotate(-90deg); }
+  .risk-dial .bg-ring{ fill:none; stroke:var(--border-strong); stroke-width:8; }
+  .risk-dial .val-ring{ fill:none; stroke-width:8; stroke-linecap:round; transition:stroke-dashoffset 1s ease, stroke 0.4s; }
+  .risk-dial .num{
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    font-family:var(--font-display); font-weight:700; font-size:24px;
+  }
+  .risk-dial .num span{ font-family:var(--font-mono); font-size:9.5px; color:var(--text-faint); font-weight:400; letter-spacing:1px; }
+  .verdict-text h3{ font-family:var(--font-display); font-size:20px; margin-bottom:6px; }
+  .verdict-text p{ color:var(--text-dim); font-size:14px; }
+
+  .flags-list{ margin-top:18px; list-style:none; display:none; grid-template-columns:1fr 1fr; gap:8px 20px; }
+  .flags-list.active{ display:grid; }
+  .flags-list li{ font-size:13.5px; color:var(--text-dim); display:flex; gap:9px; align-items:flex-start; padding:8px 0; border-top:1px solid var(--border); }
+  .flags-list li .ico{ flex-shrink:0; margin-top:2px; }
+  @media (max-width:640px){ .flags-list.active{ grid-template-columns:1fr; } }
+
+  .disclaimer-note{
+    margin-top:20px; font-size:12px; color:var(--text-faint); border-left:2px solid var(--border-strong); padding-left:12px;
+  }
+
+  /* ---------- VECTOR CARDS ---------- */
+  .vector-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(250px,1fr)); gap:18px; }
+  .vector-card{
+    background:var(--bg-panel); border:1px solid var(--border); border-radius:12px; padding:26px;
+    transition:border-color .2s, transform .2s;
+  }
+  .vector-card:hover{ border-color:var(--border-strong); transform:translateY(-3px); }
+  .vector-card .vc-icon{ width:38px; height:38px; margin-bottom:16px; color:var(--shield-glow); }
+  .vector-card h3{ font-family:var(--font-display); font-size:17px; margin-bottom:8px; }
+  .vector-card p{ font-size:13.8px; color:var(--text-dim); }
+
+  /* ---------- CHECKLIST ---------- */
+  .checklist-panel{
+    background:var(--bg-panel); border:1px solid var(--border); border-radius:14px; padding:32px;
+    display:grid; grid-template-columns:1fr 200px; gap:32px; align-items:center;
+  }
+  .checklist-items{ display:grid; grid-template-columns:1fr 1fr; gap:6px 24px; }
+  .check-item{
+    display:flex; align-items:flex-start; gap:12px; padding:11px 4px; cursor:pointer;
+    border-bottom:1px solid var(--border);
+  }
+  .check-item input{ appearance:none; width:18px; height:18px; border:1.5px solid var(--border-strong); border-radius:5px; flex-shrink:0; margin-top:2px; cursor:pointer; position:relative; transition:border-color .2s, background .2s; }
+  .check-item input:checked{ background:var(--warn); border-color:var(--warn); }
+  .check-item input:checked::after{ content:'✓'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:12px; color:#1a1200; font-weight:700; }
+  .check-item span{ font-size:13.8px; color:var(--text-dim); }
+  .tally{ text-align:center; }
+  .tally .tally-num{ font-family:var(--font-display); font-size:48px; font-weight:700; color:var(--warn); line-height:1; }
+  .tally .tally-label{ font-family:var(--font-mono); font-size:11px; color:var(--text-faint); margin-top:8px; letter-spacing:1px; }
+  @media (max-width:760px){ .checklist-panel{ grid-template-columns:1fr; } .checklist-items{ grid-template-columns:1fr; } }
+
+  /* ---------- TIPS ---------- */
+  .tips-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(220px,1fr)); gap:16px; }
+  .tip-card{ padding:22px; border:1px solid var(--border); border-radius:12px; background:var(--bg-panel); }
+  .tip-card .tip-num{ font-family:var(--font-mono); font-size:11px; color:var(--cyan); letter-spacing:1.5px; margin-bottom:10px; }
+  .tip-card h4{ font-family:var(--font-display); font-size:15.5px; margin-bottom:7px; }
+  .tip-card p{ font-size:13.3px; color:var(--text-dim); }
+
+  /* ---------- FOOTER ---------- */
+  footer{ border-top:1px solid var(--border); padding:36px 0; }
+  .footer-row{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; }
+  .footer-row .logo{ font-size:15px; }
+  footer p{ font-size:12.5px; color:var(--text-faint); font-family:var(--font-mono); max-width:520px; }
+
+  .reveal{ opacity:0; transform:translateY(18px); transition:opacity .6s ease, transform .6s ease; }
+  .reveal.in{ opacity:1; transform:translateY(0); }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <nav>
+    <div class="logo">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 2L4 5v6c0 5.2 3.4 9.7 8 11 4.6-1.3 8-5.8 8-11V5l-8-3z" stroke="#3e8ede" stroke-width="1.6" fill="rgba(62,142,222,0.12)"/><path d="M9 12l2 2 4-4.5" stroke="#45d9c8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      CYBERSHIELD
+    </div>
+    <div class="nav-links">
+      <a href="#scanner">Scanner</a>
+      <a href="#vectors">Attack Vectors</a>
+      <a href="#checklist">Red Flags</a>
+      <a href="#tips">Defense Kit</a>
+    </div>
+    <div class="status-pill"><span class="status-dot"></span>MONITORING ACTIVE</div>
+  </nav>
+</header>
+
+<main class="wrap">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div>
+      <div class="eyebrow">Phishing Defense Console</div>
+      <h1>Spot the bait<br>before you <span class="hl">take it.</span></h1>
+      <p class="sub">CyberShield breaks down how phishing attacks work, scores suspicious links against real heuristics, and trains your eye to catch what your inbox filter misses.</p>
+      <div class="cta-row">
+        <a href="#scanner" class="btn btn-primary">Run the Link Scanner ↓</a>
+        <a href="#vectors" class="btn btn-ghost">See Attack Vectors</a>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="shield-orbit">
+        <div class="radar-ring"></div>
+        <div class="radar-ring"></div>
+        <div class="radar-ring"></div>
+        <div class="radar-sweep"></div>
+        <div class="blip" style="top:22%; left:68%; animation-delay:0s;"></div>
+        <div class="blip" style="top:66%; left:20%; animation-delay:1.1s;"></div>
+        <div class="blip" style="top:76%; left:70%; animation-delay:2.1s;"></div>
+        <div class="shield-core">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 2L4 5v6c0 5.2 3.4 9.7 8 11 4.6-1.3 8-5.8 8-11V5l-8-3z" stroke="#5aa8ff" stroke-width="1.4" fill="rgba(62,142,222,0.14)"/><path d="M9 12l2 2 4-4.5" stroke="#45d9c8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCANNER -->
+  <section id="scanner">
+    <div class="section-head reveal">
+      <div class="section-tag">// 01 Link Analyzer</div>
+      <h2>Run a link through the console</h2>
+      <p>Paste a URL to see it scored against common phishing heuristics — no data leaves your browser.</p>
+    </div>
+
+    <div class="scanner-panel reveal">
+      <div class="terminal-bar">
+        <span class="tdot r"></span><span class="tdot y"></span><span class="tdot g"></span>
+        <span class="terminal-label">shield@local — url-heuristics.sh</span>
+      </div>
+      <div class="scanner-body">
+        <div class="scan-input-row">
+          <input id="urlInput" type="text" placeholder="Paste a link, e.g. http://paypal-secure.verify-account.top/login" autocomplete="off" spellcheck="false">
+          <button id="scanBtn" class="btn">Analyze Link</button>
+        </div>
+        <div class="scan-hint">Heuristic demo only — a low score doesn't guarantee safety, and a high score doesn't guarantee an attack. When unsure, don't click.</div>
+
+        <div id="scanLog" class="scan-log"></div>
+
+        <div id="verdict" class="verdict">
+          <div class="risk-dial">
+            <svg viewBox="0 0 120 120">
+              <circle class="bg-ring" cx="60" cy="60" r="52"></circle>
+              <circle id="valRing" class="val-ring" cx="60" cy="60" r="52"></circle>
+            </svg>
+            <div class="num"><span>RISK</span><span id="riskNum">0</span></div>
+          </div>
+          <div class="verdict-text">
+            <h3 id="verdictTitle">—</h3>
+            <p id="verdictDesc">—</p>
+          </div>
+        </div>
+
+        <ul id="flagsList" class="flags-list"></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- VECTORS -->
+  <section id="vectors">
+    <div class="section-head reveal">
+      <div class="section-tag">// 02 Attack Vectors</div>
+      <h2>How phishing actually reaches you</h2>
+      <p>Different bait, same goal: get you to hand over credentials, money, or access.</p>
+    </div>
+    <div class="vector-grid">
+      <div class="vector-card reveal">
+        <svg class="vc-icon" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M3 7l9 6 9-6" stroke="currentColor" stroke-width="1.5"/></svg>
+        <h3>Spoofed email</h3>
+        <p>A sender name you recognize, a domain that's one character off, and a request that can't wait until tomorrow.</p>
+      </div>
+      <div class="vector-card reveal">
+        <svg class="vc-icon" viewBox="0 0 24 24" fill="none"><rect x="4" y="9" width="16" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M8 9V6a4 4 0 018 0v3" stroke="currentColor" stroke-width="1.5"/></svg>
+        <h3>Cloned login pages</h3>
+        <p>A pixel-perfect copy of a real sign-in page, hosted on a lookalike domain, built only to capture what you type.</p>
+      </div>
+      <div class="vector-card reveal">
+        <svg class="vc-icon" viewBox="0 0 24 24" fill="none"><path d="M12 2l9 4v6c0 5-3.8 8.6-9 10-5.2-1.4-9-5-9-10V6l9-4z" stroke="currentColor" stroke-width="1.5"/><path d="M12 8v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="16" r="0.8" fill="currentColor"/></svg>
+        <h3>Manufactured urgency</h3>
+        <p>"Your account will be suspended in 24 hours." Pressure is the payload — it short-circuits the pause you'd normally take.</p>
+      </div>
+      <div class="vector-card reveal">
+        <svg class="vc-icon" viewBox="0 0 24 24" fill="none"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        <h3>Malicious attachments</h3>
+        <p>An invoice, resume, or shipping label that quietly installs malware or macros the moment it's opened.</p>
+      </div>
+      <div class="vector-card reveal">
+        <svg class="vc-icon" viewBox="0 0 24 24" fill="none"><path d="M22 16.9V21a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3 19.5 19.5 0 01-6-6A19.8 19.8 0 013 3.2 2 2 0 015 1h4.1a2 2 0 012 1.7c.1.9.4 1.9.7 2.8a2 2 0 01-.5 2.1L9.9 9a16 16 0 006 6l1.4-1.4a2 2 0 012.1-.5c.9.3 1.8.5 2.8.7a2 2 0 011.6 2z" stroke="currentColor" stroke-width="1.5"/></svg>
+        <h3>Vishing &amp; smishing</h3>
+        <p>The same tricks by phone call or text — a "bank" asking you to confirm a code, or read back an OTP you just received.</p>
+      </div>
+      <div class="vector-card reveal">
+        <svg class="vc-icon" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7" stroke="currentColor" stroke-width="1.5"/></svg>
+        <h3>Impersonation &amp; pretexting</h3>
+        <p>A message posing as your CEO, IT desk, or a coworker, built around a story convincing enough that you skip verification.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHECKLIST -->
+  <section id="checklist">
+    <div class="section-head reveal">
+      <div class="section-tag">// 03 Self Check</div>
+      <h2>Tick off what you notice</h2>
+      <p>Next time a message feels slightly off, run it against this list before you click anything.</p>
+    </div>
+    <div class="checklist-panel reveal">
+      <div class="checklist-items" id="checklistItems">
+        <label class="check-item"><input type="checkbox"><span>Sense of urgency or a threat ("act now or lose access")</span></label>
+        <label class="check-item"><input type="checkbox"><span>Generic greeting instead of your actual name</span></label>
+        <label class="check-item"><input type="checkbox"><span>Sender address doesn't match the real organization</span></label>
+        <label class="check-item"><input type="checkbox"><span>Link text and actual destination don't match</span></label>
+        <label class="check-item"><input type="checkbox"><span>Request for a password, OTP, or payment details</span></label>
+        <label class="check-item"><input type="checkbox"><span>Unexpected attachment, especially .zip or .exe</span></label>
+        <label class="check-item"><input type="checkbox"><span>Spelling or formatting that feels slightly off-brand</span></label>
+        <label class="check-item"><input type="checkbox"><span>An offer or refund that seems too good to be true</span></label>
+      </div>
+      <div class="tally">
+        <div class="tally-num" id="tallyNum">0</div>
+        <div class="tally-label">FLAGS MATCHED</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TIPS -->
+  <section id="tips">
+    <div class="section-head reveal">
+      <div class="section-tag">// 04 Defense Kit</div>
+      <h2>Habits that shut phishing down</h2>
+      <p>None of these require special tools — just a five-second pause before you act.</p>
+    </div>
+    <div class="tips-grid">
+      <div class="tip-card reveal"><div class="tip-num">HOVER</div><h4>Preview before you click</h4><p>Hover any link to see its real destination in your status bar before trusting it.</p></div>
+      <div class="tip-card reveal"><div class="tip-num">VERIFY</div><h4>Confirm through a second channel</h4><p>Call or message the sender directly using a number you already trust — not one from the email.</p></div>
+      <div class="tip-card reveal"><div class="tip-num">MFA</div><h4>Turn on multi-factor authentication</h4><p>A stolen password alone shouldn't be enough to get into any of your accounts.</p></div>
+      <div class="tip-card reveal"><div class="tip-num">REPORT</div><h4>Flag it, don't just delete it</h4><p>Reporting to your IT/security team or email provider helps block the same attack for others.</p></div>
+      <div class="tip-card reveal"><div class="tip-num">PAUSE</div><h4>Let urgency be your first red flag</h4><p>Real deadlines rarely require you to skip normal verification steps.</p></div>
+      <div class="tip-card reveal"><div class="tip-num">UPDATE</div><h4>Keep software patched</h4><p>Many attacks rely on known vulnerabilities that a routine update would have closed.</p></div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap footer-row">
+    <div class="logo">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none"><path d="M12 2L4 5v6c0 5.2 3.4 9.7 8 11 4.6-1.3 8-5.8 8-11V5l-8-3z" stroke="#3e8ede" stroke-width="1.6" fill="rgba(62,142,222,0.12)"/></svg>
+      CYBERSHIELD
+    </div>
+    <p>Educational demo. The link scanner uses simple client-side heuristics for awareness and training purposes only — it is not a substitute for real security software, and no data is sent anywhere.</p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  // ---------- Scroll reveal ----------
+  const revealEls = document.querySelectorAll('.reveal');
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, { threshold: 0.15 });
+  revealEls.forEach(el=>io.observe(el));
+
+  // ---------- Checklist tally ----------
+  const checklistItems = document.getElementById('checklistItems');
+  const tallyNum = document.getElementById('tallyNum');
+  checklistItems.addEventListener('change', ()=>{
+    const checked = checklistItems.querySelectorAll('input:checked').length;
+    tallyNum.textContent = checked;
+    tallyNum.style.color = checked >= 4 ? 'var(--danger)' : checked >= 2 ? 'var(--warn)' : 'var(--safe)';
+  });
+
+  // ---------- Phishing heuristic scanner ----------
+  const urlInput = document.getElementById('urlInput');
+  const scanBtn = document.getElementById('scanBtn');
+  const scanLog = document.getElementById('scanLog');
+  const verdict = document.getElementById('verdict');
+  const flagsList = document.getElementById('flagsList');
+  const valRing = document.getElementById('valRing');
+  const riskNum = document.getElementById('riskNum');
+  const verdictTitle = document.getElementById('verdictTitle');
+  const verdictDesc = document.getElementById('verdictDesc');
+
+  const RING_CIRC = 2 * Math.PI * 52;
+  valRing.style.strokeDasharray = RING_CIRC;
+  valRing.style.strokeDashoffset = RING_CIRC;
+
+  const SUSPICIOUS_TLDS = ['zip','top','xyz','click','country','gq','tk','ml','cf','work','support','loan','win'];
+  const BRAND_WORDS = ['paypal','apple','microsoft','google','amazon','netflix','bank','irs','fedex','dhl','office365','outlook','instagram','facebook'];
+
+  function analyze(raw){
+    const flags = [];
+    let score = 0;
+    let hostname = '';
+    let parsed = null;
+    let candidate = raw.trim();
+    if(!/^[a-zA-Z]+:\/\//.test(candidate)) candidate = 'http://' + candidate;
+
+    try{
+      parsed = new URL(candidate);
+      hostname = parsed.hostname.toLowerCase();
+    }catch(e){
+      flags.push({level:'bad', text:'Could not parse as a valid URL structure'});
+      score += 25;
+    }
+
+    if(hostname){
+      // IP address host
+      if(/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname)){
+        flags.push({level:'bad', text:'Uses a raw IP address instead of a domain name'});
+        score += 25;
+      }
+      // '@' symbol trick
+      if(raw.includes('@')){
+        flags.push({level:'bad', text:'Contains "@" — text before it may be a decoy'});
+        score += 20;
+      }
+      // punycode
+      if(hostname.includes('xn--')){
+        flags.push({level:'bad', text:'Uses punycode encoding, often used to fake lookalike letters'});
+        score += 20;
+      }
+      // subdomain count
+      const parts = hostname.split('.');
+      const subCount = Math.max(0, parts.length - 2);
+      if(subCount >= 3){
+        flags.push({level:'bad', text:`Unusually deep subdomain chain (${subCount} levels)`});
+        score += 15;
+      } else if(subCount === 2){
+        flags.push({level:'warn', text:'Multiple subdomains — worth a closer look'});
+        score += 8;
+      }
+      // hyphens
+      const hyphenCount = (hostname.match(/-/g)||[]).length;
+      if(hyphenCount >= 3){
+        flags.push({level:'bad', text:`Domain has ${hyphenCount} hyphens, common in impersonation domains`});
+        score += 15;
+      } else if(hyphenCount >= 1){
+        flags.push({level:'warn', text:'Domain contains a hyphen'});
+        score += 5;
+      }
+      // suspicious TLD
+      const tld = parts[parts.length-1];
+      if(SUSPICIOUS_TLDS.includes(tld)){
+        flags.push({level:'warn', text:`Uses a TLD (.${tld}) frequently abused in phishing campaigns`});
+        score += 12;
+      }
+      // brand name not as root domain
+      const rootDomain = parts.length>=2 ? parts[parts.length-2] : hostname;
+      const brandHit = BRAND_WORDS.find(b=>hostname.includes(b));
+      if(brandHit && rootDomain !== brandHit){
+        flags.push({level:'bad', text:`Mentions "${brandHit}" but that isn't the actual domain`});
+        score += 22;
+      }
+      // no https
+      if(parsed.protocol !== 'https:'){
+        flags.push({level:'warn', text:'Not using HTTPS'});
+        score += 10;
+      } else {
+        flags.push({level:'ok', text:'Connection uses HTTPS'});
+      }
+      // very long url
+      if(raw.length > 90){
+        flags.push({level:'warn', text:'Unusually long URL, can hide the real destination'});
+        score += 8;
+      }
+      // clean baseline
+      if(flags.filter(f=>f.level!=='ok').length === 0){
+        flags.push({level:'ok', text:'No common structural red flags detected'});
+      }
+    }
+
+    score = Math.min(100, score);
+    return { score, flags, hostname };
+  }
+
+  function levelIcon(level){
+    if(level==='bad') return '<span class="ico" style="color:var(--danger)">✕</span>';
+    if(level==='warn') return '<span class="ico" style="color:var(--warn)">▲</span>';
+    return '<span class="ico" style="color:var(--safe)">✓</span>';
+  }
+
+  function runScan(){
+    const raw = urlInput.value.trim();
+    if(!raw) { urlInput.focus(); return; }
+
+    scanBtn.disabled = true;
+    scanBtn.textContent = 'Scanning…';
+    verdict.classList.remove('active');
+    flagsList.classList.remove('active');
+    flagsList.innerHTML = '';
+    scanLog.innerHTML = '';
+    scanLog.classList.add('active');
+
+    const steps = [
+      'Parsing URL structure…',
+      'Checking domain against known patterns…',
+      'Evaluating subdomain depth &amp; hyphenation…',
+      'Cross-checking brand keyword placement…',
+      'Compiling risk score…'
+    ];
+
+    steps.forEach((s, i)=>{
+      setTimeout(()=>{
+        const line = document.createElement('div');
+        line.className = 'line';
+        line.style.animationDelay = '0s';
+        line.innerHTML = `<span class="tag-ok">$</span> ${s}`;
+        scanLog.appendChild(line);
+      }, i*220);
+    });
+
+    setTimeout(()=>{
+      const { score, flags } = analyze(raw);
+
+      // fill flags
+      flags.forEach(f=>{
+        const li = document.createElement('li');
+        li.innerHTML = `${levelIcon(f.level)}<span>${f.text}</span>`;
+        flagsList.appendChild(li);
+      });
+      flagsList.classList.add('active');
+
+      // ring + number
+      const offset = RING_CIRC - (score/100)*RING_CIRC;
+      let color = 'var(--safe)', title = 'Looks low-risk', desc = 'No strong phishing indicators found — but heuristics can miss novel attacks. Stay alert.';
+      if(score >= 60){ color = 'var(--danger)'; title = 'High risk — do not enter credentials'; desc = 'Multiple strong phishing indicators detected. Treat this link as unsafe.'; }
+      else if(score >= 30){ color = 'var(--warn)'; title = 'Proceed with caution'; desc = 'Some suspicious signals found. Verify the sender before continuing.'; }
+
+      valRing.style.stroke = color;
+      valRing.style.strokeDashoffset = offset;
+      riskNum.textContent = score;
+      verdictTitle.textContent = title;
+      verdictTitle.style.color = color;
+      verdictDesc.textContent = desc;
+      verdict.classList.add('active');
+
+      scanBtn.disabled = false;
+      scanBtn.textContent = 'Analyze Link';
+    }, steps.length*220 + 250);
+  }
+
+  scanBtn.addEventListener('click', runScan);
+  urlInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') runScan(); });
+})();
+</script>
+
+</body>
+</html>
